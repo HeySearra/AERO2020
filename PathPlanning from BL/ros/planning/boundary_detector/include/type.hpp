@@ -60,7 +60,7 @@ struct PathPoint {
     int id;
 
     // path point position
-    float x,y;
+    float x,y;  //存的两个Cone的中点信息
 
     // Each edge vertex. Generally left means red, right means blue.
     ConePos left_cone;
@@ -163,8 +163,8 @@ struct SearchTree {
     Cost_p path_cost_weight;
 
     // Params
-    double track_width = 3;
-    double track_length = 3.5;
+    double track_width = 3; //轨道宽
+    double track_length = 3.5;  //规划到前面3.5
     double sensor_range = 15;
 
     // Init
@@ -196,10 +196,10 @@ struct SearchTree {
 
         cost_color = curr.wrong_color_cnt;
         cost_width = fabs(curr.edge_dst - track_width);
-        cost_distance = fabs(std::hypot(history[N-1].x - curr.x, history[N-1].y - curr.y) - track_width);
+        cost_distance = fabs(std::hypot(history[N-1].x - curr.x, history[N-1].y - curr.y) - track_width);   //疑问，为什么不是track_length
 
         if(N < 2)
-            cost_theta = atan(fabs(curr.y)/curr.x);
+            cost_theta = atan(fabs(curr.y)/curr.x); //当前中点相对于x轴的弧度
         else {
             PathPoint prev = history[N-2];
             PathPoint last = history[N-1];
@@ -208,14 +208,14 @@ struct SearchTree {
 			double dist_b = (prev.x - last.x) * (prev.x - last.x) + (prev.y - last.y) * (prev.y - last.y);
 			double dist_c = (prev.x - curr.x) * (prev.x - curr.x) + (prev.y - curr.y) * (prev.y - curr.y);
 
-			double angle_cos = (dist_a + dist_b - dist_c) / sqrt(4 * dist_a * dist_b);
+			double angle_cos = (dist_a + dist_b - dist_c) / sqrt(4 * dist_a * dist_b);  //a和b两个边围起来的余弦
 
             if (angle_cos > 1)
 				angle_cos = 1;
 			if (angle_cos < -1)
 				angle_cos = -1;
 
-			cost_theta = M_PI - acos(angle_cos);
+			cost_theta = M_PI - acos(angle_cos);    //180度-这个角的大小，转为弧度制
 
         }
 
