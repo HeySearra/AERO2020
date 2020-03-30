@@ -133,8 +133,8 @@ struct Cost_p {
 
 // help to find low cost index
 struct Cost_index {
-    int index;
-    double cost;
+    int index;      //编号
+    double cost;    
     Cost_index(int a,double b) {
         index = a;
         cost = b;
@@ -231,7 +231,7 @@ struct SearchTree {
         double cost_std_width;      // standard deviation of track width
         double cost_std_bound;      // standard deviation of each boundary distance
         double cost_error_color;    // total color error
-        double cost_sensor_range;   // Squared di铿�erence between path length and sensor range
+        double cost_sensor_range;   // Squared diference between path length and sensor range
         
         std::vector<double> theta;
         std::vector<double> width;
@@ -245,19 +245,19 @@ struct SearchTree {
         double range = 0;
 
         for(int i = 1; i < history.size(); i++) {
-            if(i == 1) {
-                theta.push_back(atan(fabs(history[i].y/history[i].x)));
-                bound_l.push_back(history[i].left_cone);
+            if(i == 1) {//初始化处理
+                theta.push_back(atan(fabs(history[i].y/history[i].x))); //history[1]代表的PathPoint相对于坐标轴的角度
+                bound_l.push_back(history[i].left_cone);                //history[1]代表的PathPoint的两侧端点
                 bound_r.push_back(history[i].right_cone);
             }
             else {
-                if(history[i].left_cone != bound_l[bound_l.size()-1]) {
+                if(history[i].left_cone != bound_l[bound_l.size()-1]) {//如果当点history中的这个PathPoint的left端点和bound_l中最后一个不同
                     bound_ld.push_back(std::hypot(bound_l[bound_l.size()-1].x - history[i].left_cone.x, bound_l[bound_l.size()-1].y - history[i].left_cone.y));
                     bound_l.push_back(history[i].left_cone);
                 }
                 if(history[i].right_cone != bound_r[bound_r.size()-1]) {
-                    bound_rd.push_back(std::hypot(bound_r[bound_r.size()-1].x - history[i].right_cone.x, bound_r[bound_r.size()-1].y - history[i].right_cone.y));
-                    bound_r.push_back(history[i].right_cone);
+                    bound_rd.push_back(std::hypot(bound_r[bound_r.size()-1].x - history[i].right_cone.x, bound_r[bound_r.size()-1].y - history[i].right_cone.y));//求这两个点的距离
+                    bound_r.push_back(history[i].right_cone);//再把r放进去
                 }
 
                 PathPoint prev = history[i-2];
@@ -277,16 +277,16 @@ struct SearchTree {
 
                 theta.push_back(M_PI - acos(angle_cos));
             }
-            width.push_back(history[i].edge_dst);
+            width.push_back(history[i].edge_dst);       //history[i]这个PathPoint线段的长度
             color += history[i].wrong_color_cnt;
-            range += std::hypot(history[i].x - history[i-1].x, history[i].y - history[i-1].y);
+            range += std::hypot(history[i].x - history[i-1].x, history[i].y - history[i-1].y);  //history对应的这条边的长度
         }
 
         cost_theta = *std::max_element(theta.begin(),theta.end());
-        cost_std_width = CalculateStd(width, track_width);
-        cost_std_bound = CalculateStd(bound_ld, track_length) + CalculateStd(bound_rd, track_length);
-        cost_error_color = color;
-        cost_sensor_range = fabs(range - sensor_range);
+        cost_std_width = CalculateStd(width, track_width);  //计算方差
+        cost_std_bound = CalculateStd(bound_ld, track_length) + CalculateStd(bound_rd, track_length);   //计算两侧宽度和赛道长的方差
+        cost_error_color = color;  
+        cost_sensor_range = fabs(range - sensor_range);     //当前路径的范围有没有超15m
 
         cost = cost_theta * path_cost_weight.w_k + cost_std_width * path_cost_weight.w_w + cost_std_bound * path_cost_weight.w_b +
         cost_error_color * path_cost_weight.w_c + cost_sensor_range * path_cost_weight.w_r;
@@ -308,7 +308,6 @@ struct SearchTree {
         return false;
     }
 };
-
 
 
 };

@@ -220,29 +220,29 @@ void BoundaryDetector::getMidPoint(cv::Subdiv2D coneSet, std::map<ConePos,char> 
 }
 
 void BoundaryDetector::searchPath(std::map<int, PathPoint> MidSet, SearchTree &Path) {
-    Path.history.push_back(Path.Node);
+    Path.history.push_back(Path.Node);  //记录我当前的结点
     
-    Path.node_cost_weight = beam_weight_;
+    Path.node_cost_weight = beam_weight_;   //加载yaml里的参数
     Path.path_cost_weight = path_weight_;
 
-    std::vector<SearchTree*> next_set;
-    std::vector<SearchTree*> next_tmp;
+    std::vector<SearchTree*> next_set;  //定义两个容器
+    std::vector<SearchTree*> next_tmp;  //
 
-    next_set.push_back(&Path);
+    next_set.push_back(&Path);  //
 
-    for(int iter = 0; iter < max_iter_num_; iter++) {
+    for(int iter = 0; iter < max_iter_num_; iter++) {   //max_iter_num = 4
         next_tmp.clear();
         std::vector<Cost_index> v_c;
-        for(auto &leaf: next_set) {
+        for(auto &leaf: next_set) {     //leaf是一个SearchPoint
 
             // Calculate each cost which current node connects to next lead to
             v_c.clear();
-            for(int i = 1; i < MidSet.size(); i++) {
-                if(leaf->CheckExist(MidSet[i]))
-                    continue;
+            for(int i = 1; i < MidSet.size(); i++) {    //MidSet村的pathPoint
+                if(leaf->CheckExist(MidSet[i])) //检测MidSet[i]有没有在leaf的history(vector<PathPoint>)里
+                    continue;           //如果在，即之前经过了，就不去执行接下来的操作
                 double cost_curr_tmp = leaf->CalculateCurrentCost(MidSet[i]);
 
-                if(cost_curr_tmp > max_beam_cost_)
+                if(cost_curr_tmp > max_beam_cost_)  //nax_beam_cost_ = 1.5
                     continue;
                 v_c.push_back(Cost_index(i, cost_curr_tmp));
             }
@@ -251,14 +251,15 @@ void BoundaryDetector::searchPath(std::map<int, PathPoint> MidSet, SearchTree &P
             sort(v_c.begin(),v_c.end(),
                     [&](const Cost_index &a, const Cost_index &b) {
                         return a.cost < b.cost;
-                    });
+                    });//按v_c里结点的cost排序
 
             leaf->next.resize(std::min(max_search_num_, int(v_c.size())));
 
             for(int i = 0; i < std::min(max_search_num_, int(v_c.size())); i++) {
                 SearchTree branch;
                 branch.Node = MidSet[v_c[i].index];
-                branch.history = leaf->history; branch.history.push_back(MidSet[v_c[i].index]);
+                branch.history = leaf->history;
+                branch.history.push_back(MidSet[v_c[i].index]);
                 branch.node_cost_weight = leaf->node_cost_weight;
                 branch.path_cost_weight = leaf->path_cost_weight;
                 leaf->next[i] = branch;
@@ -277,27 +278,28 @@ void BoundaryDetector::searchPath(std::map<int, PathPoint> MidSet, SearchTree &P
 }
 
 void BoundaryDetector::selectBestPath(SearchTree Path, std::vector<PathPoint> &BestPath) {
-    std::vector<std::vector<PathPoint>> tree_path;
-    std::vector<SearchTree*> next;
-    std::vector<SearchTree*> tmp;
-    std::vector<Cost_index> costSet;
-    next.push_back(&Path);
+    //参数为一个SearchTree结点，一个PathPoint数组
+    std::vector<std::vector<PathPoint>> tree_path;  //二维PathPoint数组
+    std::vector<SearchTree*> next;                  //SearchTree数组
+    std::vector<SearchTree*> tmp;                   //临时变量：SearchTree数组
+    std::vector<Cost_index> costSet;                //type.hpp:135
+    next.push_back(&Path);                          //将
 
     int index_i = 0;
 
     while(next.size() != 0) {
         tmp.clear();
         for(auto &iter :next) {
-            if(iter->next.size() == 0) {
-                if(iter->history.size() <= 1)
-                    continue;
-                tree_path.push_back(iter->history);
-                costSet.push_back(Cost_index(index_i, iter->CalculateAllCost()));
+            if(iter->next.size() == 0) {        //若SearchTree中的next（vector<SearchTree>)中没有东西
+               if(iter->history.size() <= 1)   //若记录过的PathPoint数量<1，即这是路径的起点
+                    continue;                   //就不执行接下来的步骤
+                tree_path.push_back(iter->history);     //把这整个history记录下来
+                costSet.push_b ack(Cost_index(index_i, iter->CalculateAllCost()));   //记录AllCost
                 index_i++;
             }
             else {
                 for(auto &it:iter->next)
-                    tmp.push_back(&it);
+                    tmp.push_back(&it);     //将iter的next中所有的SearchTree都放进去
             }
         }
         next = tmp;
